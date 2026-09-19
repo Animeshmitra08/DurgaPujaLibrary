@@ -40,10 +40,11 @@ export function TrackRow({ track, index, onPlay }: TrackRowProps) {
       }`}
     >
       {/* Index / equalizer sit under an overlaid play button that appears on
-          hover — and stays put while the current track is paused. */}
+          hover — and stays put while the current track is paused. Touch has no
+          hover and no double-click, so below `sm` the button is always there. */}
       <div className="relative grid size-10 place-items-center">
         <span
-          className={`${pinButton ? 'invisible' : 'group-hover:invisible'} ${
+          className={`${pinButton ? 'invisible' : 'invisible sm:visible sm:group-hover:invisible'} ${
             isActive ? '' : 'text-sm tabular-nums text-on-surface-variant'
           }`}
         >
@@ -53,7 +54,7 @@ export function TrackRow({ track, index, onPlay }: TrackRowProps) {
           type="button"
           onClick={() => (isCurrent ? toggle() : onPlay())}
           className={`absolute inset-0 m-auto size-9 place-items-center rounded-full bg-primary text-on-primary shadow transition hover:opacity-90 ${
-            pinButton ? 'grid' : 'hidden group-hover:grid'
+            pinButton ? 'grid' : 'grid sm:hidden sm:group-hover:grid'
           }`}
           aria-label={isActive ? `Pause ${track.title}` : `Play ${track.title}`}
         >

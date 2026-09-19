@@ -5,6 +5,14 @@ import { useLibrary } from '../store/libraryStore'
 import { usePlayer } from '../store/playerStore'
 import type { Track } from '../types'
 
+/**
+ * Touch screens have no hover, so anything a pointer reveals on hover stays
+ * visible below `sm`. Left hidden it is still tappable — invisible controls
+ * swallow taps meant for the artwork.
+ */
+const revealed =
+  'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100'
+
 export function TrackCard({ track, onPlay }: { track: Track; onPlay: () => void }) {
   const { current, isPlaying, toggle, playNext, addToQueue } = usePlayer()
   const { toggleLike } = useLibrary()
@@ -16,43 +24,49 @@ export function TrackCard({ track, onPlay }: { track: Track; onPlay: () => void 
       className={`group relative flex flex-col gap-3 rounded-3xl border p-3 transition ${
         isCurrent
           ? 'border-primary bg-primary-container/25 shadow-md'
-          : 'border-outline-variant bg-surface-low hover:-translate-y-1 hover:border-outline hover:shadow-lg'
+          : 'border-outline-variant bg-surface-low sm:hover:-translate-y-1 sm:hover:border-outline sm:hover:shadow-lg'
       }`}
     >
       <div className="relative overflow-hidden rounded-2xl">
         <Cover track={track} className="aspect-square w-full" rounded="rounded-2xl" />
 
-        {/* Like sits top-right, revealed on hover or when already liked. */}
+        {/* The whole artwork is the play control, so one tap anywhere on it
+            starts the track — no hunting for a hover-revealed button. */}
+        <button
+          type="button"
+          onClick={() => (isCurrent ? toggle() : onPlay())}
+          className="absolute inset-0 rounded-2xl outline-offset-2 outline-primary focus-visible:outline-2"
+          aria-label={isActive ? `Pause ${track.title}` : `Play ${track.title}`}
+        />
+
+        <span className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-inverse-surface/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-inverse-on-surface backdrop-blur">
+          {formatTime(track.duration)}
+        </span>
+
+        {/* Play badge — decoration over the tap target, not a control itself. */}
+        <span
+          className={`pointer-events-none absolute bottom-2 right-2 grid size-12 place-items-center rounded-2xl bg-primary text-on-primary shadow-lg transition ${
+            isCurrent
+              ? 'opacity-100'
+              : `${revealed} sm:translate-y-2 sm:group-hover:translate-y-0 sm:group-focus-within:translate-y-0`
+          }`}
+        >
+          {isActive ? <PauseIcon className="size-5" /> : <PlayIcon className="size-5 translate-x-px" />}
+        </span>
+
+        {/* Like comes after the tap target so it keeps its own hit area. */}
         <button
           type="button"
           onClick={() => toggleLike(track.id)}
           className={`absolute right-2 top-2 grid size-9 place-items-center rounded-full backdrop-blur transition ${
             track.liked
               ? 'bg-surface/90 text-error'
-              : 'bg-surface/70 text-on-surface-variant opacity-0 hover:text-on-surface group-hover:opacity-100 focus-visible:opacity-100'
+              : `bg-surface/70 text-on-surface-variant hover:text-on-surface ${revealed}`
           }`}
           aria-label={track.liked ? `Unlike ${track.title}` : `Like ${track.title}`}
           aria-pressed={track.liked}
         >
           <HeartIcon className="size-4" filled={track.liked} />
-        </button>
-
-        <span className="absolute bottom-2 left-2 rounded-full bg-inverse-surface/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-inverse-on-surface backdrop-blur">
-          {formatTime(track.duration)}
-        </span>
-
-        {/* Play FAB */}
-        <button
-          type="button"
-          onClick={() => (isCurrent ? toggle() : onPlay())}
-          className={`absolute bottom-2 right-2 grid size-12 place-items-center rounded-2xl bg-primary text-on-primary shadow-lg transition ${
-            isCurrent
-              ? 'opacity-100'
-              : 'translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100'
-          }`}
-          aria-label={isActive ? `Pause ${track.title}` : `Play ${track.title}`}
-        >
-          {isActive ? <PauseIcon className="size-5" /> : <PlayIcon className="size-5 translate-x-px" />}
         </button>
       </div>
 
@@ -75,7 +89,7 @@ export function TrackCard({ track, onPlay }: { track: Track; onPlay: () => void 
             type="button"
             onClick={() => playNext(track)}
             title="Play next"
-            className="grid size-7 place-items-center rounded-lg text-on-surface-variant opacity-0 transition hover:bg-surface-high hover:text-on-surface group-hover:opacity-100 focus-visible:opacity-100"
+            className={`grid size-7 place-items-center rounded-lg text-on-surface-variant transition hover:bg-surface-high hover:text-on-surface ${revealed}`}
             aria-label={`Play ${track.title} next`}
           >
             <PlusIcon className="size-4" />
@@ -84,7 +98,7 @@ export function TrackCard({ track, onPlay }: { track: Track; onPlay: () => void 
             type="button"
             onClick={() => addToQueue(track)}
             title="Add to queue"
-            className="grid size-7 place-items-center rounded-lg text-on-surface-variant opacity-0 transition hover:bg-surface-high hover:text-on-surface group-hover:opacity-100 focus-visible:opacity-100"
+            className={`grid size-7 place-items-center rounded-lg text-on-surface-variant transition hover:bg-surface-high hover:text-on-surface ${revealed}`}
             aria-label={`Add ${track.title} to queue`}
           >
             <QueueIcon className="size-4" />

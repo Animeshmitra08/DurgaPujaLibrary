@@ -34,6 +34,8 @@ function buildOrder(length: number, shuffle: boolean, first?: number): number[] 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const { registerPlay } = useLibrary()
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  /** What we last handed the element, so reloads are not triggered needlessly. */
+  const loadedSrc = useRef<string | null>(null)
   const [prefs] = useState(loadPrefs)
 
   const [queue, setQueue] = useState<Track[]>([])
@@ -56,19 +58,32 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(PREFS_KEY, JSON.stringify({ volume, shuffle, repeat, rate }))
   }, [volume, shuffle, repeat, rate])
 
+  /**
+   * Points the element at a source and optionally starts it. Call this
+   * synchronously from a click handler: mobile browsers only honour `play()`
+   * while the user gesture is still live, and an effect runs too late — which
+   * is why the first tap used to be swallowed. Failures are ignored here
+   * because the play/pause effect below is the authority and will retry.
+   */
+  const attach = useCallback((src: string | undefined, autoplay: boolean) => {
+    const audio = audioRef.current
+    if (!audio || !src) return
+    // `audio.src` reads back as an absolute URL, so compare against what we set.
+    if (loadedSrc.current !== src) {
+      loadedSrc.current = src
+      audio.src = src
+      audio.load()
+    }
+    if (autoplay) void audio.play().catch(() => {})
+  }, [])
+
   // Load the source whenever the track identity changes. Bundled tracks point
   // at a hashed asset URL, uploads at an object URL — either way it is ready.
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || !currentSrc) return
-    if (audio.src !== currentSrc) {
-      audio.src = currentSrc
-      audio.load()
-    }
-    if (isPlaying) void audio.play().catch(() => setIsPlaying(false))
+    attach(currentSrc, isPlaying)
     // Re-running on isPlaying would fight the play/pause effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentId, currentSrc])
+  }, [currentId, currentSrc, attach])
 
   // Keep the element in sync with declarative playback state.
   useEffect(() => {
@@ -96,13 +111,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const audio = audioRef.current
       if (auto && repeat === 'one' && audio) {
         audio.currentTime = 0
+        setIsPlaying(true)
         void audio.play().catch(() => setIsPlaying(false))
         return
       }
+      // A track that reaches its end leaves the element paused, so an
+      // auto-advance has to assert that the run is still going.
       if (orderPos + 1 < order.length) {
         setOrderPos(orderPos + 1)
+        if (auto) setIsPlaying(true)
       } else if (repeat === 'all' || !auto) {
         setOrderPos(0)
+        if (auto) setIsPlaying(true)
       } else {
         setIsPlaying(false)
       }
@@ -129,19 +149,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const useShuffle = forceShuffle ?? shuffle
       if (forceShuffle != null && forceShuffle !== shuffle) setShuffle(forceShuffle)
       const nextOrder = buildOrder(tracks.length, useShuffle, startIndex)
+      const pos = useShuffle ? 0 : Math.max(0, nextOrder.indexOf(startIndex))
       setQueue(tracks)
       setOrder(nextOrder)
-      setOrderPos(useShuffle ? 0 : Math.max(0, nextOrder.indexOf(startIndex)))
+      setOrderPos(pos)
       setCurrentTime(0)
       setIsPlaying(true)
+      attach(tracks[nextOrder[pos]]?.url, true)
     },
-    [shuffle],
+    [shuffle, attach],
   )
 
   const toggle = useCallback(() => {
     if (!current) return
-    setIsPlaying((playing) => !playing)
-  }, [current])
+    if (isPlaying) {
+      setIsPlaying(false)
+      audioRef.current?.pause()
+      return
+    }
+    setIsPlaying(true)
+    attach(current.url, true)
+  }, [current, isPlaying, attach])
 
   const seek = useCallback((seconds: number) => {
     const audio = audioRef.current
@@ -191,22 +219,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setOrder([index])
         setOrderPos(0)
         setIsPlaying(true)
+        attach(track.url, true)
         return
       }
       const nextOrder = [...order]
       nextOrder.splice(immediate ? orderPos + 1 : nextOrder.length, 0, index)
       setOrder(nextOrder)
     },
-    [queue, order, orderPos],
+    [queue, order, orderPos, attach],
   )
 
   const playNext = useCallback((track: Track) => enqueue(track, true), [enqueue])
   const addToQueue = useCallback((track: Track) => enqueue(track, false), [enqueue])
 
-  const jumpTo = useCallback((pos: number) => {
-    setOrderPos(pos)
-    setIsPlaying(true)
-  }, [])
+  const jumpTo = useCallback(
+    (pos: number) => {
+      setOrderPos(pos)
+      setIsPlaying(true)
+      attach(queue[order[pos]]?.url, true)
+    },
+    [attach, queue, order],
+  )
 
   const removeAt = useCallback(
     (pos: number) => {
@@ -346,7 +379,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
         onEnded={() => advance(true)}
         onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onPause={(e) => {
+          // Reaching the end of a track fires `pause` before `ended`. Letting
+          // that through would stop the run before advance() could continue it.
+          if (!e.currentTarget.ended) setIsPlaying(false)
+        }}
       />
     </PlayerContext.Provider>
   )
