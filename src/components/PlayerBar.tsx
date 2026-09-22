@@ -16,11 +16,10 @@ import {
   VolumeIcon,
   VolumeLowIcon,
 } from './Icons'
+import { Select } from './Select'
 import { formatTime } from '../lib/format'
 import { useLibrary } from '../store/libraryStore'
-import { usePlayer } from '../store/playerStore'
-
-const RATES = [0.75, 1, 1.25, 1.5, 2]
+import { RATE_OPTIONS, usePlayer } from '../store/playerStore'
 
 const thumbClass =
   '[&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-moz-range-thumb]:size-3 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary'
@@ -196,21 +195,15 @@ export function PlayerBar({ onToggleQueue, queueOpen, onExpand }: PlayerBarProps
 
         {/* Secondary controls — the queue toggle stays visible at every size. */}
         <div className="flex flex-1 items-center justify-end gap-2">
-          <div className="hidden items-center gap-1.5 lg:flex">
-            <SpeedIcon className="size-4 text-on-surface-variant" />
-            <select
-              value={rate}
-              onChange={(e) => setRate(Number(e.target.value))}
-              aria-label="Playback speed"
-              className="rounded-full border border-outline-variant bg-surface-container px-2.5 py-1 text-xs text-on-surface outline-none transition focus:border-primary"
-            >
-              {RATES.map((value) => (
-                <option key={value} value={value}>
-                  {value}×
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            value={rate}
+            options={RATE_OPTIONS}
+            onChange={setRate}
+            label="Playback speed"
+            icon={SpeedIcon}
+            size="sm"
+            className="hidden w-[5.75rem] lg:block"
+          />
 
           <button
             type="button"

@@ -1,6 +1,11 @@
 import { createContext, useContext } from 'react'
 import type { RepeatMode, Track } from '../types'
 
+/** Offered wherever playback speed is adjustable. */
+export const RATE_OPTIONS: Array<{ value: number; label: string }> = [0.75, 1, 1.25, 1.5, 2].map(
+  (value) => ({ value, label: `${value}×` }),
+)
+
 export type PlayerValue = {
   current: Track | undefined
   queue: Track[]

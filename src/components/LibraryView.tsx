@@ -3,6 +3,7 @@ import { TrackCard } from './TrackCard'
 import { TrackRow } from './TrackRow'
 import { Cover } from './Cover'
 import { GridIcon, ListIcon, MusicIcon, PlayIcon, ShuffleIcon } from './Icons'
+import { Select, type SelectOption } from './Select'
 import { formatCount, formatTime } from '../lib/format'
 import { useLibrary } from '../store/libraryStore'
 import { usePlayer } from '../store/playerStore'
@@ -29,8 +30,13 @@ const VIEW_META: Record<Exclude<ViewId, 'admin'>, { eyebrow: string; title: stri
   },
 }
 
-const selectClass =
-  'rounded-full border border-outline-variant bg-surface-container px-3 py-2 text-sm text-on-surface outline-none transition focus:border-primary'
+const SORT_OPTIONS: SelectOption<SortKey>[] = [
+  { value: 'recent', label: 'Recently added', hint: 'Newest first' },
+  { value: 'title', label: 'Title A–Z' },
+  { value: 'artist', label: 'Artist A–Z' },
+  { value: 'duration', label: 'Duration', hint: 'Shortest first' },
+  { value: 'plays', label: 'Most played' },
+]
 
 export function LibraryView({ view, query }: { view: Exclude<ViewId, 'admin'>; query: string }) {
   const { tracks, loading } = useLibrary()
@@ -39,8 +45,11 @@ export function LibraryView({ view, query }: { view: Exclude<ViewId, 'admin'>; q
   const [genre, setGenre] = useState('All')
   const [layout, setLayout] = useState<Layout>('grid')
 
-  const genres = useMemo(
-    () => ['All', ...Array.from(new Set(tracks.map((t) => t.genre).filter(Boolean))).sort()],
+  const genreOptions = useMemo<SelectOption<string>[]>(
+    () =>
+      ['All', ...Array.from(new Set(tracks.map((t) => t.genre).filter(Boolean))).sort()].map(
+        (option) => ({ value: option, label: option }),
+      ),
     [tracks],
   )
 
@@ -153,30 +162,20 @@ export function LibraryView({ view, query }: { view: Exclude<ViewId, 'admin'>; q
           {query ? `Results for “${query}”` : 'All tracks'}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
-          <select
+          <Select
             value={genre}
-            onChange={(e) => setGenre(e.target.value)}
-            aria-label="Filter by genre"
-            className={selectClass}
-          >
-            {genres.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <select
+            options={genreOptions}
+            onChange={setGenre}
+            label="Genre"
+            className="w-36"
+          />
+          <Select
             value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            aria-label="Sort tracks"
-            className={selectClass}
-          >
-            <option value="recent">Recently added</option>
-            <option value="title">Title A–Z</option>
-            <option value="artist">Artist A–Z</option>
-            <option value="duration">Duration</option>
-            <option value="plays">Most played</option>
-          </select>
+            options={SORT_OPTIONS}
+            onChange={setSort}
+            label="Sort by"
+            className="w-44"
+          />
 
           <div className="flex items-center gap-0.5 rounded-full border border-outline-variant bg-surface-container p-0.5">
             {([

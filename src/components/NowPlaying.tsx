@@ -11,14 +11,14 @@ import {
   RepeatIcon,
   RepeatOneIcon,
   ShuffleIcon,
+  SpeedIcon,
   VolumeIcon,
   VolumeLowIcon,
 } from './Icons'
+import { Select } from './Select'
 import { formatTime } from '../lib/format'
 import { useLibrary } from '../store/libraryStore'
-import { usePlayer } from '../store/playerStore'
-
-const RATES = [0.75, 1, 1.25, 1.5, 2]
+import { RATE_OPTIONS, usePlayer } from '../store/playerStore'
 
 const ghostButton =
   'grid place-items-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white'
@@ -205,18 +205,16 @@ export function NowPlaying({ open, onClose }: { open: boolean; onClose: () => vo
               />
             </div>
 
-            <select
+            <Select
               value={rate}
-              onChange={(e) => setRate(Number(e.target.value))}
-              aria-label="Playback speed"
-              className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-medium text-white outline-none backdrop-blur transition focus:border-white/60"
-            >
-              {RATES.map((value) => (
-                <option key={value} value={value} className="text-on-surface">
-                  {value}×
-                </option>
-              ))}
-            </select>
+              options={RATE_OPTIONS}
+              onChange={setRate}
+              label="Playback speed"
+              icon={SpeedIcon}
+              tone="inverse"
+              size="sm"
+              className="w-[5.75rem]"
+            />
           </div>
         </div>
 
