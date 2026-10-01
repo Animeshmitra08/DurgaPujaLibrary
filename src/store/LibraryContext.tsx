@@ -5,6 +5,7 @@ import { fetchCatalogue, shuffledArtwork, toTrack, type DriveImage } from '../li
 import { probeDuration } from '../lib/audioMeta'
 import { loadListenerState, saveListenerState } from '../lib/catalogueState'
 import { LibraryContext, type LibraryValue } from './libraryStore'
+import { useServer } from './serverStore'
 
 export function LibraryProvider({ children }: { children: ReactNode }) {
   const [tracks, setTracks] = useState<Track[]>([])
@@ -53,7 +54,11 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     [probeDurations],
   )
 
+  // A sleeping server would only time out, so wait for it — and refetch each time it wakes.
+  const online = useServer().status === 'online'
+
   useEffect(() => {
+    if (!online) return
     const controller = new AbortController()
     const { signal } = controller
 
@@ -67,7 +72,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     })()
 
     return () => controller.abort()
-  }, [reload])
+  }, [online, reload])
 
   const upload = useCallback(
     async (file: File, folder: DriveFolder, title?: string) => {

@@ -3,7 +3,8 @@
  * Drive folder id; `audios` and `images` are the two folders inside it.
  */
 
-const BASE = `${(import.meta.env.VITE_API_URL ?? 'https://durgapujaapi-bd4ef.containers.snapdeploy.app').replace(/\/+$/, '')}/api/files`
+const ORIGIN = (import.meta.env.VITE_API_URL ?? 'https://durgapujaapi-bd4ef.containers.snapdeploy.app').replace(/\/+$/, '')
+const BASE = `${ORIGIN}/api/files`
 
 /** Write routes need this once the server sets API_KEY; reads are always open. */
 const API_KEY = import.meta.env.VITE_API_KEY
@@ -67,6 +68,25 @@ export async function syncDrive(): Promise<SyncResult> {
 /** DELETE /api/files/:id */
 export async function deleteFile(id: string): Promise<void> {
   await request(`/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export type Health = { status: string; uptime: number; database: string }
+
+/**
+ * GET /health — resolves only once the server is up with its database connected.
+ * A sleeping host may hang, answer 502/503 or serve an HTML holding page; all of
+ * those reject, as does running past `timeoutMs`.
+ */
+export async function checkHealth(timeoutMs: number, signal?: AbortSignal): Promise<Health> {
+  const timeout = AbortSignal.timeout(timeoutMs)
+  const response = await fetch(`${ORIGIN}/health`, {
+    cache: 'no-store',
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+  })
+  const json = await response.json().catch(() => null)
+  if (!response.ok || !json?.success) throw new Error(`GET /health failed with ${response.status}`)
+  if (json.database !== 'connected') throw new Error(`Database is ${json.database}`)
+  return json as Health
 }
 
 /** GET /api/files/:id/stream — used directly as <audio src> / <img src>. */

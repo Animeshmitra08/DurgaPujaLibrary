@@ -4,9 +4,11 @@ import { LibraryView } from './components/LibraryView'
 import { NowPlaying } from './components/NowPlaying'
 import { PlayerBar } from './components/PlayerBar'
 import { QueuePanel } from './components/QueuePanel'
+import { ServerBanner } from './components/ServerStatus'
 import { TopNav } from './components/TopNav'
 import { LibraryProvider } from './store/LibraryContext'
 import { PlayerProvider } from './store/PlayerContext'
+import { ServerProvider } from './store/ServerContext'
 import { ThemeProvider } from './store/ThemeContext'
 import type { ViewId } from './types'
 
@@ -41,6 +43,7 @@ function Shell() {
         <TopNav view={view} onNavigate={navigate} query={query} onQuery={setQuery} />
 
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+          <ServerBanner />
           {view === 'admin' ? <AdminView /> : <LibraryView view={view} query={query} />}
         </main>
       </div>
@@ -69,11 +72,13 @@ function Shell() {
 export default function App() {
   return (
     <ThemeProvider>
-      <LibraryProvider>
-        <PlayerProvider>
-          <Shell />
-        </PlayerProvider>
-      </LibraryProvider>
+      <ServerProvider>
+        <LibraryProvider>
+          <PlayerProvider>
+            <Shell />
+          </PlayerProvider>
+        </LibraryProvider>
+      </ServerProvider>
     </ThemeProvider>
   )
 }

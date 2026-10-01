@@ -8,6 +8,7 @@ import {
   SearchIcon,
   SunIcon,
 } from './Icons'
+import { ServerPill } from './ServerStatus'
 import { useTheme } from '../store/themeStore'
 import type { ViewId } from '../types'
 
@@ -118,6 +119,8 @@ export function TopNav({ view, onNavigate, query, onQuery }: TopNavProps) {
             />
           </label>
         )}
+
+        <ServerPill />
 
         <div className="relative flex shrink-0 items-center gap-1" ref={helpRef}>
           <button
