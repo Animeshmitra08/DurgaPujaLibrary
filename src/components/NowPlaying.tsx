@@ -98,7 +98,7 @@ export function NowPlaying({ open, onClose }: { open: boolean; onClose: () => vo
             </h2>
             <p className="mt-2 text-base text-white/70">{current.artist}</p>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-white/70">
-              {[current.genre, current.year, current.kind === 'bundled' ? 'Bundled' : 'Uploaded']
+              {[current.genre, current.year]
                 .filter(Boolean)
                 .map((chip) => (
                   <span key={chip} className="rounded-full bg-white/10 px-3 py-1 backdrop-blur">

@@ -7,16 +7,15 @@ import {
   MoonIcon,
   SearchIcon,
   SunIcon,
-  UploadIcon,
 } from './Icons'
 import { useTheme } from '../store/themeStore'
 import type { ViewId } from '../types'
 
+// No Admin tab — the studio lives at /song-admin.
 const TABS: Array<{ id: ViewId; label: string; icon: typeof LibraryIcon }> = [
   { id: 'library', label: 'Browse', icon: LibraryIcon },
   { id: 'liked', label: 'Liked', icon: HeartIcon },
   { id: 'recent', label: 'Recent', icon: ClockIcon },
-  { id: 'admin', label: 'Admin', icon: UploadIcon },
 ]
 
 const SHORTCUTS: Array<[string, string]> = [

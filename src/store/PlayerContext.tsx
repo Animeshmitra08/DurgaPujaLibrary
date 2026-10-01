@@ -77,8 +77,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (autoplay) void audio.play().catch(() => {})
   }, [])
 
-  // Load the source whenever the track identity changes. Bundled tracks point
-  // at a hashed asset URL, uploads at an object URL — either way it is ready.
+  // Load the source whenever the track identity changes. Catalogue tracks point
+  // at the storage API's stream URL, uploads at an object URL — either way it is ready.
   useEffect(() => {
     attach(currentSrc, isPlaying)
     // Re-running on isPlaying would fight the play/pause effect below.

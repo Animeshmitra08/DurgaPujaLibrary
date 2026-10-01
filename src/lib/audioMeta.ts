@@ -8,13 +8,3 @@ export function probeDuration(src: string): Promise<number> {
     audio.src = src
   })
 }
-
-/** Same, for a file the admin has picked but not published yet. */
-export async function probeFileDuration(file: File): Promise<number> {
-  const url = URL.createObjectURL(file)
-  try {
-    return await probeDuration(url)
-  } finally {
-    URL.revokeObjectURL(url)
-  }
-}
